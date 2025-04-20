@@ -1,0 +1,12 @@
+train: cv/dataset/images/train
+val: cv/dataset/images/val
+test: cv/dataset/images/test
+
+nc: 33
+names: ["abs","aerobic_steppers","armcurl","armextension","backextension",
+"bench_press","bike","cablecrossover","cablerow","calfmachine",
+"chestpress","chindip","elliptical","foamroller","ghdmachine",
+"gym-ball","hacksquat","hipabduction","lateralraise","latpulldown",
+"legcurl","legextension","legpress","pecdelt","punchingbag",
+"pushupbar","resistentband","roller-abs","rope","seateddip",
+"shoulderpress","smithmachine","treadmill"]

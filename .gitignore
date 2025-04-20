@@ -1,0 +1,7 @@
+/venv/
+/cv/results/
+/.env
+/cv/dataset/
+/cv/dataset/labels/
+/images/
+/cv/model.pth
