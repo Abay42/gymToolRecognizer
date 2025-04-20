@@ -4,8 +4,6 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 from PIL import Image
 import io
-
-
 from core.database import get_db
 from model.gymtool import GymTool
 from core.security import get_current_user
@@ -26,20 +24,30 @@ async def predict(
     logger.info(f"Received image for prediction from user: {current_user.email}")
 
     try:
-        Image.open(io.BytesIO(await file.read()))
+        if not current_user.is_sub:
+            if current_user.free_attempts <= 0:
+                logger.warning(f"No free attempts left for user: {current_user.email}")
+                return {"error": "No free attempts left. Please subscribe to continue."}
+
+            current_user.free_attempts -= 1
+            db.commit()
+            logger.info(f"Decreased attempt. Remaining: {current_user.free_attempts}")
+
+        image_data = await file.read()
+        Image.open(io.BytesIO(image_data))
         logger.info("Image successfully loaded into memory.")
 
         gym_tools = db.query(GymTool).all()
         if not gym_tools:
             logger.warning("No gym tools found in database.")
-            return {"error": "No gym tools found in database"}
+            return {"error": "No gym tools found in database."}
 
         gym_tool = random.choice(gym_tools)
         logger.info(f"Predicted gym tool: {gym_tool.name} (ID: {gym_tool.id})")
 
         muscles_info = [
-            {"id": muscle.id, "name": muscle.name, "image_url": muscle.image_url}
-            for muscle in gym_tool.muscles
+            {"id": m.id, "name": m.name, "image_url": m.image_url}
+            for m in gym_tool.muscles
         ]
 
         response = {
@@ -49,14 +57,13 @@ async def predict(
             "links": gym_tool.links,
             "alternative": gym_tool.alternative,
             "muscles": muscles_info,
-            "requested_by": current_user.email
+            "requested_by": current_user.email,
+            "free_attempts_left": current_user.free_attempts if not current_user.is_sub else "∞"
         }
 
         logger.info("Prediction response generated successfully.")
-        logger.info(f"Response is: {response}")
         return response
 
     except Exception as e:
         logger.error(f"Prediction failed: {str(e)}")
         return {"error": "Internal server error"}
-

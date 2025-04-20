@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from core.database import get_db
+from core.security import get_current_user
 from schemas.payment import PaymentRequest
 from model.user import User
 
@@ -36,3 +37,21 @@ def create_payment_intent(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/check_subscription")
+def check_subscription(current_user: User = Depends(get_current_user)):
+    return {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "is_subscribed": current_user.is_sub
+    }
+
+
+@router.get("/get_free_attempts")
+def get_free_attempts(current_user: User = Depends(get_current_user)):
+    return {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "free_attempts": current_user.free_attempts
+    }

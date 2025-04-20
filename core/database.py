@@ -1,18 +1,18 @@
 import io
-
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from core.config import settings
 from minio import Minio
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
-engine = create_engine(settings.DATABASE_URL)
 
 
 def get_db():
@@ -27,20 +27,35 @@ minio_client = Minio(
     settings.MINIO_URL,
     access_key=settings.MINIO_ACCESS_KEY,
     secret_key=settings.MINIO_SECRET_KEY,
-    secure=False
+    secure=True
 )
 
 
 def upload_image_to_minio(file_bytes: bytes, file_name: str) -> str:
+    logger.info(f"Preparing to upload image: {file_name} to MinIO bucket: {settings.MINIO_BUCKET}")
+
     if not minio_client.bucket_exists(settings.MINIO_BUCKET):
+        logger.info(f"Bucket {settings.MINIO_BUCKET} does not exist. Creating it now.")
         minio_client.make_bucket(settings.MINIO_BUCKET)
+    else:
+        logger.info(f"Bucket {settings.MINIO_BUCKET} already exists.")
 
-    minio_client.put_object(
-        bucket_name=settings.MINIO_BUCKET,
-        object_name=file_name,
-        data=io.BytesIO(file_bytes),
-        length=len(file_bytes),
-        content_type="image/jpeg"
-    )
+    try:
+        logger.info(f"Uploading image: {file_name} to MinIO...")
+        minio_client.put_object(
+            bucket_name=settings.MINIO_BUCKET,
+            object_name=file_name,
+            data=io.BytesIO(file_bytes),
+            length=len(file_bytes),
+            content_type="image/jpeg"
+        )
+        logger.info(f"Successfully uploaded image: {file_name} to MinIO bucket: {settings.MINIO_BUCKET}")
 
-    return f"http://{settings.MINIO_URL}/{settings.MINIO_BUCKET}/{file_name}"
+        image_url = f"http://{settings.MINIO_URL}/{settings.MINIO_BUCKET}/{file_name}"
+        logger.info(f"Image URL: {image_url}")
+        return image_url
+
+    except Exception as e:
+        logger.error(f"Error uploading image: {file_name} to MinIO. Error: {str(e)}")
+        raise
+

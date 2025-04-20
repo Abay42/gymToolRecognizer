@@ -17,6 +17,7 @@ class User(Base):
     gender = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_sub = Column(Boolean, default=False)
+    free_attempts = Column(Integer)
     sub_until = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -1,4 +1,3 @@
-import os
 import time
 from core.database import get_db, upload_image_to_minio
 from model.muscle import Muscle

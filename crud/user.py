@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def create_user(db: Session, user_data: UserCreate):
     hashed_pw = hash_password(user_data.password)
     new_user = User(email=user_data.email, password=hashed_pw, gender=user_data.gender, age=user_data.age,
-                    username=user_data.username, is_sub=False)
+                    username=user_data.username, is_sub=False, free_attempts=5)
     logger.info(f"User is : {new_user}")
     db.add(new_user)
     db.commit()
