@@ -1,4 +1,6 @@
 import logging
+import string
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from core.database import get_db
@@ -7,17 +9,13 @@ from crud.user_gym_logs import set_gym_flag, get_user_gym_logs
 from datetime import date
 from pydantic import BaseModel
 from model.user import User
+from schemas.user_gym_log import GymLogRequest
 
 # Setup logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 router = APIRouter(prefix="/gym-log", tags=["gym-log"])
-
-
-class GymLogRequest(BaseModel):
-    date: date
-    went: bool
 
 
 @router.patch("/flag")
@@ -28,7 +26,7 @@ def mark_attendance(
 ):
     logger.info(f"[Attendance] User {current_user.email} is marking {data.date} as {'attended' if data.went else 'missed'}")
     try:
-        result = set_gym_flag(db, current_user.id, data.date, data.went)
+        result = set_gym_flag(db, current_user.id, data)
         logger.info(f"[Attendance] Update successful for {current_user.email} on {data.date}")
         return result
     except Exception as e:
