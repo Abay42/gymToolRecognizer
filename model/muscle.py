@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from core.database import Base
-from model.association import gymtool_muscle_association
 
 
 class Muscle(Base):
@@ -11,8 +10,8 @@ class Muscle(Base):
     name = Column(String, unique=True, nullable=False)
     image_url = Column(String, nullable=True)
 
-    gym_tools = relationship(
-        "GymTool",
-        secondary=gymtool_muscle_association,
-        back_populates="muscles"
+    tool_associations = relationship(
+        "GymToolMuscleAssociation",
+        back_populates="muscle",
+        cascade="all, delete-orphan"
     )

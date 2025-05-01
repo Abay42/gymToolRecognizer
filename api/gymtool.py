@@ -4,6 +4,7 @@ import logging
 
 from core.database import get_db
 from crud.gymtool import get_all_gymtools, get_gymtool_by_name, add_muscle_to_gymtool, add_link_to_gymtool
+from schemas.gymtool import AddMuscleRequest
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,14 +27,13 @@ def read_tool(name: str, db: Session = Depends(get_db)):
 
 @router.post("/add-muscle")
 def add_muscle(
-    gymtool_name: str = Query(..., title="Gym Tool Name"),
-    muscle_name: str = Query(..., title="Muscle Name"),
+    data: AddMuscleRequest,
     db: Session = Depends(get_db)
 ):
-    gym_tool = add_muscle_to_gymtool(db, gymtool_name, muscle_name)
+    gym_tool = add_muscle_to_gymtool(db, data)
     if not gym_tool:
         raise HTTPException(status_code=400, detail="Failed to add muscle to gym tool")
-    return {"message": f"Muscle '{muscle_name}' added successfully to '{gymtool_name}'"}
+    return {"message": f"Muscle '{data.muscle_name}' added successfully to '{data.gymtool_name}'"}
 
 
 @router.post("/add-link")

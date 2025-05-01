@@ -47,7 +47,7 @@ async def predict(
 
         muscles_info = [
             {"id": m.id, "name": m.name, "image_url": m.image_url}
-            for m in gym_tool.muscles
+            for m in gym_tool.muscle_associations
         ]
 
         response = {
