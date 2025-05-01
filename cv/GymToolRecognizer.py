@@ -66,7 +66,7 @@ test_dataset = datasets.ImageFolder(root=test_dir, transform=val_transform)
 
 
 sampler = create_balanced_sampler(train_dataset)
-train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=sampler, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=sampler)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
