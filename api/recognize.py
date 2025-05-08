@@ -4,7 +4,10 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.orm import Session
 from PIL import Image
 import io
+
+from core.converter import image_to_base64, CLASS_NAMES
 from core.database import get_db
+from cv.GymToolRecognizer import GymToolRecognizer
 from model.gymtool import GymTool
 from core.security import get_current_user
 from model.user import User
@@ -13,6 +16,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["cv"])
+
+recognizer = GymToolRecognizer("cv/model.pth")
 
 
 @router.post("/predict")
@@ -34,7 +39,7 @@ async def predict(
             logger.info(f"Decreased attempt. Remaining: {current_user.free_attempts}")
 
         image_data = await file.read()
-        Image.open(io.BytesIO(image_data))
+        image = Image.open(io.BytesIO(image_data))
         logger.info("Image successfully loaded into memory.")
 
         gym_tools = db.query(GymTool).all()
@@ -42,23 +47,40 @@ async def predict(
             logger.warning("No gym tools found in database.")
             return {"error": "No gym tools found in database."}
 
-        gym_tool = random.choice(gym_tools)
-        logger.info(f"Predicted gym tool: {gym_tool.name} (ID: {gym_tool.id})")
+        predicted_id = recognizer.predict_image(image)
+        logger.info(f"Model predicted class ID: {predicted_id}")
 
+        predicted_name = CLASS_NAMES.get(predicted_id, None)
+        if not predicted_name:
+            logger.warning(f"Class name not found for ID: {predicted_id}")
+            return {"error": f"Class name not found for ID: {predicted_id}"}
+
+        gym_tool = db.query(GymTool).filter(GymTool.name == predicted_name).first()
+        if not gym_tool:
+            logger.warning(f"Predicted ID {predicted_id} not found in DB.")
+            return {"error": "Predicted gym tool not found."}
+
+        encoded_image = image_to_base64(image)
         muscles_info = [
-            {"id": m.id, "name": m.name, "image_url": m.image_url}
-            for m in gym_tool.muscle_associations
+            {
+                "name": assoc.muscle.name,
+                "image_url": assoc.muscle.image_url,
+                "primary": assoc.primary_muscles,
+                "secondary": assoc.secondary_muscles,
+            }
+            for assoc in gym_tool.muscle_associations
         ]
-
         response = {
             "class_id": gym_tool.id,
+            "class_name": predicted_name,
             "name": gym_tool.name,
             "description": gym_tool.description,
             "links": gym_tool.links,
             "alternative": gym_tool.alternative,
             "muscles": muscles_info,
             "requested_by": current_user.email,
-            "free_attempts_left": current_user.free_attempts if not current_user.is_sub else "∞"
+            "free_attempts_left": current_user.free_attempts if not current_user.is_sub else "∞",
+            "image_b64": encoded_image
         }
 
         logger.info("Prediction response generated successfully.")

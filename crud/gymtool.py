@@ -33,7 +33,7 @@ def get_all_gymtools(db: Session) -> list:
     for tool in tools:
         muscles = tool.muscle_associations
         links = tool.links
-        logger.info(f"Gym Tool: {tool.name}, Muscles: {[muscle.name for muscle in muscles]}, Links: {[link.url for link in links]}")
+        logger.info(f"Gym Tool: {tool.name}, Muscles: {[assoc.muscle.name for assoc in muscles]}, Links: {[link.url for link in links]}")
 
     logger.info(f"Retrieved {len(tools)} gym tools")
     return tools

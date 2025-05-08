@@ -4,6 +4,5 @@
 /cv/dataset/
 /cv/dataset/labels/
 /images/
-/cv/model.pth
 .idea
 /cv/logs/
