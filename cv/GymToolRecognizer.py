@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from PIL import Image
+from torch.cuda.amp import GradScaler, autocast
+from torchvision.transforms import v2
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms, models
@@ -12,10 +14,8 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 from torch.utils.data import WeightedRandomSampler
 import matplotlib.pyplot as plt
-from torchvision.models import ResNet50_Weights
-from torchvision.transforms import RandAugment
+from torchvision.transforms import RandAugment, v2
 from tqdm import tqdm
-from torch.nn.modules.loss import BCEWithLogitsLoss
 from sklearn.metrics import classification_report
 from core.converter import CLASS_NAMES
 
@@ -23,11 +23,8 @@ NUM_CLASSES = 33
 BATCH_SIZE = 32
 EPOCHS = 50
 LEARNING_RATE = 1e-5
-LOWER_LR = 1e-6
-FREEZE_EPOCHS = 5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {DEVICE}")
-
 
 class GymToolRecognizer:
     def __init__(self, model_path="model.pth"):
@@ -48,37 +45,34 @@ class GymToolRecognizer:
         self.best_loss = float('inf')
 
         # Loss and optimizer
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4)
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4, weight_decay=1e-4)
         self.scheduler = None
         self.model_path = model_path
         self.load_model()
 
     def _get_transforms(self):
         """Return train and val transforms"""
-        to_rgb = transforms.Lambda(lambda img: img.convert("RGB"))
         base_transforms = [
-            to_rgb,
-            transforms.Resize((224, 224)),
+            transforms.Lambda(lambda img: img.convert("RGB")),
+            v2.Resize((256, 256)),
+            v2.CenterCrop(224),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
 
-        train_transform = transforms.Compose(base_transforms + [
-            transforms.RandomHorizontalFlip(),
-
-            transforms.RandomVerticalFlip(),
-            RandAugment(num_ops=2, magnitude=9),
-            transforms.RandomRotation(30),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
-            transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
-            transforms.RandomPerspective(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        train_transform = v2.Compose(base_transforms[:3] + [  # Apply Resize/Crop first
+            v2.RandomHorizontalFlip(),
+            v2.RandomVerticalFlip(),
+            v2.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+            v2.RandomAffine(degrees=0, translate=(0.1, 0.1)),
+            v2.RandomPerspective(p=0.5),
+            *base_transforms[3:]  # Normalize at the end
         ])
 
-        val_transform = transforms.Compose(base_transforms + [
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        val_transform = v2.Compose(base_transforms)
+        self.cutmix = v2.CutMix(num_classes=NUM_CLASSES)
 
         return train_transform, val_transform
 
@@ -162,19 +156,21 @@ class GymToolRecognizer:
         log_dir = os.path.join("logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
         os.makedirs(log_dir, exist_ok=True)
         self.writer = SummaryWriter(log_dir)
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4)
         self.scheduler = OneCycleLR(
             self.optimizer,
             max_lr=3e-4,
             steps_per_epoch=len(self.train_loader),
             epochs=EPOCHS
         )
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-4)
+
         print("Starting training...")
         prev_val_loss = None
         best_val_loss = float('inf')
         no_improve_count = 0
         patience = 5
         min_delta = 1e-3
+        scaler = GradScaler()
         try:
             for epoch in range(1, EPOCHS + 1):
                 # Training phase
@@ -183,19 +179,27 @@ class GymToolRecognizer:
                 progress_bar = tqdm(self.train_loader, desc=f"Epoch {epoch}/{EPOCHS}", leave=False)
                 for images, labels in progress_bar:
                     images, labels = images.to(DEVICE), labels.to(DEVICE)
-                    # Forward pass
-                    outputs = self.model(images)
-                    loss = self.criterion(outputs, labels)
-                    # Backward pass
+                    images, labels = self.cutmix(images, labels)
+
                     self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
+
+                    # Forward pass with mixed precision
+                    with autocast():
+                        outputs = self.model(images)
+                        loss = self.criterion(outputs, labels)
+
+                    # Backward pass
+                    scaler.scale(loss).backward()
+                    scaler.step(self.optimizer)
+                    scaler.update()
                     self.scheduler.step()
+
                     # Metrics
-                    running_loss += loss.item()
                     preds = outputs.argmax(dim=1)
-                    correct += (preds == labels).sum().item()
+                    true_labels = labels.argmax(dim=1) if len(labels.shape) > 1 else labels
+                    correct += (preds == true_labels).sum().item()
                     total += labels.size(0)
+                    running_loss += loss.item()
                     progress_bar.set_postfix(loss=loss.item())
 
                 train_acc = correct / total
@@ -364,4 +368,5 @@ if __name__ == "__main__":
     print("\nTrain samples per class:")
     for i, count in enumerate(train_counts):
         print(f"{train_dataset.classes[i]}: {count}")
+    # recognizer.calculate_metrics()
     recognizer.train()
