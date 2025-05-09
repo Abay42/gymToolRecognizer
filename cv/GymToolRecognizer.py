@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.optim as optim
 from PIL import Image
 from torch.cuda.amp import GradScaler, autocast
-from torchvision.transforms import v2
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms, models
@@ -26,11 +25,13 @@ LEARNING_RATE = 1e-5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {DEVICE}")
 
+
 class GymToolRecognizer:
     def __init__(self, model_path="model.pth"):
         # Model architecture
-        self.model = models.resnet50(weights='IMAGENET1K_V1')
-        self.model.fc = nn.Linear(self.model.fc.in_features, NUM_CLASSES)
+        self.model = models.resnet50(weights=None)
+        in_feats = self.model.fc.in_features
+        self.model.fc = nn.Linear(in_feats, NUM_CLASSES)
         self.model = self.model.to(DEVICE)
 
         self.train_loader = None
@@ -119,6 +120,7 @@ class GymToolRecognizer:
         """Load model weights"""
         try:
             self.model.load_state_dict(torch.load(self.model_path, map_location=DEVICE))
+            self.model.eval()
             print(f"Model loaded from {self.model_path}")
         except FileNotFoundError:
             print(f"No saved model found at {self.model_path}, starting fresh.")
