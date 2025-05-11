@@ -12,24 +12,22 @@ client = OpenAI(
 
 def generate_workout(prompt: str, user_logs: list[UserGymLog]):
     log_summary = "\n".join(
-        f"{log.date}: {'Went' if log.went_to_gym else 'Missed'} | {log.action or 'No details'}"
+        f"{log.date}: {'Посетил' if log.went_to_gym else 'Пропустил'} | {log.action or 'Нет данных'}"
         for log in user_logs
     )
 
     system_prompt = (
-        "You are a professional AI fitness coach. Analyze the user's training history to understand their consistency, "
-        "preferred exercises, and progress. Then respond accordingly."
+        "Вы — профессиональный AI-тренер по фитнесу. Проанализируйте историю тренировок пользователя, чтобы понять его регулярность, "
+        "предпочитаемые упражнения и прогресс. Затем ответьте соответствующим образом."
     )
 
     response = client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": system_prompt + "\n\nTraining history:\n" + log_summary},
+            {"role": "system", "content": system_prompt + "\n\nИстория тренировок:\n" + log_summary},
             {"role": "user", "content": prompt}
         ],
         temperature=0.7,
         max_tokens=800
     )
     return response.choices[0].message.content.strip()
-
-

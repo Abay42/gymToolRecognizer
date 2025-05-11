@@ -13,11 +13,10 @@ router = APIRouter(prefix="/workout", tags=["workout"])
 
 
 class WorkoutRequest(BaseModel):
-    goal: str  # e.g., hypertrophy, fat loss
-    level: str  # beginner/intermediate/advanced
-    focus: str  # chest, full body, etc.
-    equipment: str  # dumbbells, machines
-    duration_minutes: int
+    goal: str  # например, гипертрофия, потеря жира
+    level: str  # новичок / средний / продвинутый
+    focus: str  # грудь, полное тело и т.д.
+    equipment: str  # гантели, тренажеры
 
 
 @router.post("/generate")
@@ -27,13 +26,12 @@ def generate_workout_plan(
         current_user: User = Depends(get_current_user)
 ):
     prompt = (
-        f"Create a {req.goal} workout plan for a {req.level} user "
-        f"focusing on {req.focus} using {req.equipment}. "
-        f"The session should last {req.duration_minutes} minutes."
+        f"Создай программу тренировок для {req.goal} для пользователя уровня {req.level}, "
+        f"с акцентом на {req.focus} и использованием {req.equipment}."
     )
     try:
         user_logs = get_user_gym_logs(db, current_user.id)
         workout = generate_workout(prompt, user_logs)
         return {"workout_plan": workout}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate workout: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Не удалось создать тренировку: {str(e)}")

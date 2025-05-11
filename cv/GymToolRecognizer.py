@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 from torch.utils.data import WeightedRandomSampler
 import matplotlib.pyplot as plt
-from torchvision.transforms import RandAugment, v2
+from torchvision.transforms import v2
 from tqdm import tqdm
 from sklearn.metrics import classification_report
 from core.converter import CLASS_NAMES
