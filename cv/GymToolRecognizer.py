@@ -119,7 +119,9 @@ class GymToolRecognizer:
     def load_model(self):
         """Load model weights"""
         try:
-            self.model.load_state_dict(torch.load(self.model_path, map_location=DEVICE))
+            self.model.load_state_dict(
+                torch.load(self.model_path, map_location=DEVICE, weights_only=True)
+            )
             self.model.eval()
             print(f"Model loaded from {self.model_path}")
         except FileNotFoundError:
