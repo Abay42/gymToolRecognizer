@@ -13,10 +13,7 @@ router = APIRouter(prefix="/workout", tags=["workout"])
 
 
 class WorkoutRequest(BaseModel):
-    goal: str  # например, гипертрофия, потеря жира
-    level: str  # новичок / средний / продвинутый
-    focus: str  # грудь, полное тело и т.д.
-    equipment: str  # гантели, тренажеры
+    goal: str
 
 
 @router.post("/generate")
@@ -26,8 +23,7 @@ def generate_workout_plan(
         current_user: User = Depends(get_current_user)
 ):
     prompt = (
-        f"Создай программу тренировок для {req.goal} для пользователя уровня {req.level}, "
-        f"с акцентом на {req.focus} и использованием {req.equipment}."
+        f"Создай программу тренировок для {req.goal}."
     )
     try:
         user_logs = get_user_gym_logs(db, current_user.id)
