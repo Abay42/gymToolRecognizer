@@ -39,8 +39,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
     logger.info(f"Login attempt for email: {user.email}")
-    if not is_valid_email(user.email):
-        raise HTTPException(status_code=400, detail="Invalid email format")
+    # if not is_valid_email(user.email):
+    #     raise HTTPException(status_code=400, detail="Invalid email format")
 
     user_obj = authenticate_user(db, user.email, user.password)
     if not user_obj:
