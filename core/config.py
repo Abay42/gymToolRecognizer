@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     STRIPE_PUBLISHABLEKEY: str = os.getenv("STRIPE_PUBLISHABLEKEY")
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN")
     GITHUB_MODEL_ENDPOINT: str = os.getenv("GITHUB_MODEL_ENDPOINT")
+    MODEL: str = os.getenv("MODEL")
 
     class Config:
         env_file = ".env"

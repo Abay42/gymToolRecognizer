@@ -1,12 +1,14 @@
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import SystemMessage, UserMessage
+from azure.core.credentials import AzureKeyCredential
 from openai import OpenAI
 from core.config import settings
 from model.user_gym_log import UserGymLog
 
-endpoint = settings.GITHUB_MODEL_ENDPOINT
-model = "openai/gpt-4.1"
-client = OpenAI(
-    base_url=endpoint,
-    api_key=settings.GITHUB_TOKEN,
+model = settings.MODEL
+client = ChatCompletionsClient(
+    endpoint=settings.GITHUB_MODEL_ENDPOINT,
+    credential=AzureKeyCredential(settings.GITHUB_TOKEN),
 )
 
 
@@ -21,13 +23,13 @@ def generate_workout(prompt: str, user_logs: list[UserGymLog]):
         "предпочитаемые упражнения и прогресс. Затем ответьте соответствующим образом."
     )
 
-    response = client.chat.completions.create(
+    response = client.complete(
         model=model,
         messages=[
-            {"role": "system", "content": system_prompt + "\n\nИстория тренировок:\n" + log_summary},
-            {"role": "user", "content": prompt}
+            SystemMessage(system_prompt + "\n\nИстория тренировок:\n" + log_summary),
+            UserMessage(prompt),
         ],
-        temperature=0.7,
-        max_tokens=800
+        temperature=1.0,
+        top_p=1.0,
     )
     return response.choices[0].message.content.strip()
