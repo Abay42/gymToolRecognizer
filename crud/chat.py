@@ -32,3 +32,7 @@ def remove_from_favorites(db: Session, user_id: int, history_id: int):
 
 def get_user_favorites(db: Session, user_id: int):
     return db.query(ChatFavorite).filter(ChatFavorite.user_id == user_id).all()
+
+
+def get_user_history(db: Session, user_id: int):
+    return db.query(ChatHistory).filter(ChatHistory.user_id == user_id).all()

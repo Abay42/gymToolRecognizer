@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN")
     GITHUB_MODEL_ENDPOINT: str = os.getenv("GITHUB_MODEL_ENDPOINT")
     MODEL: str = os.getenv("MODEL")
+    TOGIS_TOKEN: str = os.getenv("TOGIS_TOKEN")
 
     class Config:
         env_file = ".env"

@@ -3,10 +3,9 @@ from pydantic import BaseModel
 
 from core.database import get_db
 from core.security import get_current_user
-from crud.chat import add_workout_to_history, get_user_favorites, remove_from_favorites, add_to_favorites
+from crud.chat import add_workout_to_history, get_user_favorites, remove_from_favorites, add_to_favorites, get_user_history
 from crud.user_gym_logs import get_user_gym_logs
 from crud.workout_generator import generate_workout
-from model.chatHistory import ChatHistory
 from model.user import User
 from sqlalchemy.orm import Session
 
@@ -43,7 +42,7 @@ def get_workout_history(
         db: Session = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    return db.query(ChatHistory).filter(ChatHistory.user_id == current_user.id).all()
+    return get_user_history(db, current_user.id)
 
 
 @router.post("/favorite/{history_id}")

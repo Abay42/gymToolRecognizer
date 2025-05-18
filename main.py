@@ -9,6 +9,7 @@ from api.muscle import router as muscle_router
 from api.user_gym_log import router as user_gym_log
 from api.payment import router as payment
 from api.workout_generator import router as workout
+from api.geo import router as geo
 
 app = FastAPI(strict_slashes=False)
 app.add_middleware(
@@ -27,3 +28,4 @@ app.include_router(muscle_router)
 app.include_router(payment)
 app.include_router(user_gym_log)
 app.include_router(workout)
+app.include_router(geo)

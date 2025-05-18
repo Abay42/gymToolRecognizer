@@ -1,5 +1,4 @@
 from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -12,6 +11,7 @@ class UserCreate(UserBase):
     age: int
     gender: str
     username: str
+    city: str
 
 
 class UserLogin(UserBase):
@@ -22,6 +22,7 @@ class UserProfile(UserBase):
     username: Optional[str] = None
     age: Optional[int] = None
     gender: str
+    city: str
 
 
 class Token(BaseModel):
