@@ -28,7 +28,7 @@ print(f"Using device: {DEVICE}")
 
 class GymToolRecognizer:
     def __init__(self, model_path="model.pth"):
-        # Model architecture
+        """Model architecture"""
         self.model = models.resnet50(weights=None)
         in_feats = self.model.fc.in_features
         self.model.fc = nn.Linear(in_feats, NUM_CLASSES)
@@ -63,13 +63,13 @@ class GymToolRecognizer:
             v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
 
-        train_transform = v2.Compose(base_transforms[:3] + [  # Apply Resize/Crop first
+        train_transform = v2.Compose(base_transforms[:3] + [
             v2.RandomHorizontalFlip(),
             v2.RandomVerticalFlip(),
             v2.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
             v2.RandomAffine(degrees=0, translate=(0.1, 0.1)),
             v2.RandomPerspective(p=0.5),
-            *base_transforms[3:]  # Normalize at the end
+            *base_transforms[3:]
         ])
 
         val_transform = v2.Compose(base_transforms)
@@ -282,11 +282,8 @@ class GymToolRecognizer:
     #         self.writer.close()
     #         print("Metrics and model saved before exiting.")
     #         raise
-
-    # def calculate_metrics(self):
-    #     if self.test_loader is None:
-    #         self._load_datasets()
     #
+    # def calculate_metrics(self):
     #     self.model.eval()
     #     predictions, true_labels = [], []
     #     test_running_loss = 0.0
@@ -332,7 +329,7 @@ class GymToolRecognizer:
     #
     #     print(f"Metrics saved to {save_dir}/metrics.txt")
     #     self.plot_accuracy(save_dir)
-
+    #
     # def plot_accuracy(self, save_dir):
     #     plt.figure(figsize=(10, 6))
     #
@@ -355,22 +352,23 @@ class GymToolRecognizer:
     #     plt.close()
     #     print(f"Accuracy plot saved as '{plot_path}'")
 
-#
+
 # if __name__ == "__main__":
-#     # recognizer = GymToolRecognizer()
-#     # recognizer._load_datasets()
-#     #
-#     # print("\nDataset Statistics:")
-#     # print(f"Train samples: {len(recognizer.train_loader.dataset)}")
-#     # print(f"Val samples: {len(recognizer.val_loader.dataset)}")
-#     # print(f"Test samples: {len(recognizer.test_loader.dataset)}")
-#     #
-#     # train_dataset = recognizer.train_loader.dataset
-#     # train_targets = np.array(train_dataset.targets)
-#     # train_counts = np.bincount(train_targets)
-#     #
-#     # print("\nTrain samples per class:")
-#     # for i, count in enumerate(train_counts):
-#     #     print(f"{train_dataset.classes[i]}: {count}")
-#     # recognizer.calculate_metrics()
-#     # recognizer.train()
+
+    # recognizer = GymToolRecognizer()
+    # recognizer._load_datasets()
+    #
+    # print("\nDataset Statistics:")
+    # print(f"Train samples: {len(recognizer.train_loader.dataset)}")
+    # print(f"Val samples: {len(recognizer.val_loader.dataset)}")
+    # print(f"Test samples: {len(recognizer.test_loader.dataset)}")
+    #
+    # train_dataset = recognizer.train_loader.dataset
+    # train_targets = np.array(train_dataset.targets)
+    # train_counts = np.bincount(train_targets)
+    #
+    # print("\nTrain samples per class:")
+    # for i, count in enumerate(train_counts):
+    #     print(f"{train_dataset.classes[i]}: {count}")
+    # recognizer.calculate_metrics()
+    # recognizer.train()

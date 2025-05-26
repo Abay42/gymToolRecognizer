@@ -19,8 +19,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
     logger.info(f"Registration attempt for email: {user.email}")
-    if not is_valid_email(user.email):
-        raise HTTPException(status_code=400, detail="Invalid email format")
+    #if not is_valid_email(user.email):
+        #raise HTTPException(status_code=400, detail="Invalid email format")
 
     existing_user = db.query(User).filter(User.email == user.email).first()
 
@@ -28,8 +28,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         logger.warning(f"Registration failed: Email {user.email} already registered")
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    if not is_valid_password(user.password):
-        raise HTTPException(status_code=400, detail="Password does not meet complexity requirements")
+    #if not is_valid_password(user.password):
+        #raise HTTPException(status_code=400, detail="Password does not meet complexity requirements")
 
     new_user = create_user(db, user)
     logger.info(f"User {user.email} registered successfully with ID {new_user.id}")

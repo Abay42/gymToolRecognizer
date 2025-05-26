@@ -1,6 +1,6 @@
 # model/user.py
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from datetime import datetime, date
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from core.database import Base
 
@@ -19,6 +19,8 @@ class User(Base):
     free_attempts = Column(Integer)
     sub_until = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    dateOfBirth = Column(Date, nullable=False)
+    profile_image_url = Column(String, nullable=True)
 
     gym_logs = relationship("UserGymLog", back_populates="user", cascade="all, delete-orphan")
     chat_histories = relationship("ChatHistory", back_populates="user")

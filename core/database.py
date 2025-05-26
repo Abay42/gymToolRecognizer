@@ -31,14 +31,14 @@ minio_client = Minio(
 )
 
 
-def upload_image_to_minio(file_bytes: bytes, file_name: str) -> str:
-    logger.info(f"Preparing to upload image: {file_name} to MinIO bucket: {settings.MINIO_BUCKET}")
+def upload_image_to_minio(file_bytes: bytes, file_name: str, bucket_name: str) -> str:
+    logger.info(f"Preparing to upload image: {file_name} to MinIO bucket: {bucket_name}")
 
-    if not minio_client.bucket_exists(settings.MINIO_BUCKET):
-        logger.info(f"Bucket {settings.MINIO_BUCKET} does not exist. Creating it now.")
-        minio_client.make_bucket(settings.MINIO_BUCKET)
+    if not minio_client.bucket_exists(bucket_name):
+        logger.info(f"Bucket {bucket_name} does not exist. Creating it now.")
+        minio_client.make_bucket(bucket_name)
     else:
-        logger.info(f"Bucket {settings.MINIO_BUCKET} already exists.")
+        logger.info(f"Bucket {bucket_name} already exists.")
 
     try:
         logger.info(f"Uploading image: {file_name} to MinIO...")
@@ -49,9 +49,9 @@ def upload_image_to_minio(file_bytes: bytes, file_name: str) -> str:
             length=len(file_bytes),
             content_type="image/jpeg"
         )
-        logger.info(f"Successfully uploaded image: {file_name} to MinIO bucket: {settings.MINIO_BUCKET}")
+        logger.info(f"Successfully uploaded image: {file_name} to MinIO bucket: {bucket_name}")
 
-        image_url = f"http://{settings.MINIO_URL}/{settings.MINIO_BUCKET}/{file_name}"
+        image_url = f"http://{settings.MINIO_URL}/{bucket_name}/{file_name}"
         logger.info(f"Image URL: {image_url}")
         return image_url
 

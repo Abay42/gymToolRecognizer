@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 class DvGisClient:
     def __init__(self, api_token):
         self.api_token = api_token
-        self.base_url = "https://catalog.api.2gis.com"
+        self.base_url = settings.TOGIS_URL
 
     def find_nearby_gyms(self, latitude, longitude, radius=1000, limit=10):
         url = f"{self.base_url}/3.0/items"
@@ -65,11 +65,11 @@ class DvGisClient:
                 }
                 gyms.append(gym_info)
 
-            logger.info(f"🧾 Processed gyms: {gyms}")
+            logger.info(f"Processed gyms: {gyms}")
             return gyms
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"❌ Request failed: {str(e)}", exc_info=True)
+            logger.error(f"Request failed: {str(e)}", exc_info=True)
             return {"error": str(e)}
 
 
