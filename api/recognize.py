@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 from PIL import Image
 import io
 
+from core.config import settings
 from core.converter import image_to_base64, CLASS_NAMES
-from core.database import get_db
+from core.database import get_db, get_image_from_minio
 from cv.GymToolRecognizer import GymToolRecognizer
 from model.gymtool import GymTool
 from core.security import get_current_user
@@ -61,15 +62,30 @@ async def predict(
             return {"error": "Predicted gym tool not found."}
 
         encoded_image = image_to_base64(image)
-        muscles_info = [
-            {
+        muscles_info = []
+        for assoc in gym_tool.muscle_associations:
+            muscle_data = {
                 "name": assoc.muscle.name,
-                "image_url": assoc.muscle.image_url,
                 "primary": assoc.primary_muscles,
                 "secondary": assoc.secondary_muscles,
             }
-            for assoc in gym_tool.muscle_associations
-        ]
+
+            if assoc.muscle.image_url:
+                logger.info(f"Converting muscle image URL to base64: {assoc.muscle.image_url}")
+                muscle_image_b64 = get_image_from_minio(assoc.muscle.image_url)
+                if muscle_image_b64:
+                    muscle_data["image_b64"] = muscle_image_b64
+                    logger.info(f"Successfully encoded muscle image for: {assoc.muscle.name}")
+                else:
+                    muscle_data["image_url"] = assoc.muscle.image_url
+                    muscle_data["image_b64"] = None
+                    logger.warning(f"Failed to encode muscle image, keeping URL: {assoc.muscle.name}")
+            else:
+                muscle_data["image_url"] = None
+                muscle_data["image_b64"] = None
+
+            muscles_info.append(muscle_data)
+
         response = {
             "class_id": gym_tool.id,
             "class_name": predicted_name,
@@ -89,3 +105,4 @@ async def predict(
     except Exception as e:
         logger.error(f"Prediction failed: {str(e)}")
         return {"error": "Internal server error"}
+
