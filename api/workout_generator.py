@@ -32,7 +32,11 @@ def generate_workout_plan(
     )
     try:
         user_logs = get_user_gym_logs(db, current_user.id)
-        workout = generate_workout(prompt, user_logs)
+
+        age = current_user.age
+        gender = current_user.gender
+
+        workout = generate_workout(prompt, user_logs, age, gender)
 
         return add_workout_to_history(db, current_user.id, req.goal, workout)
 
