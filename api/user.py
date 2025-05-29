@@ -1,4 +1,4 @@
-import uuid
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, Body, UploadFile, File
 from sqlalchemy.orm import Session
@@ -56,13 +56,12 @@ def upload_profile_image(
         raise HTTPException(status_code=400, detail="File size must be less than 5MB")
 
     try:
-        file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
-        unique_filename = f"{current_user.id}_{uuid.uuid4().hex}.{file_extension}"
+        filename = f"{current_user}_{int(time.time())}.jpg"
 
         image_url = upload_image_to_minio(
             file_bytes,
-            unique_filename,
-            bucket_name=Settings.PROFILE_BUCKET
+            filename,
+            Settings.PROFILE_BUCKET
         )
 
         updated_user = update_profile_image(db, current_user.email, image_url)
