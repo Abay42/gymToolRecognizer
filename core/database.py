@@ -1,10 +1,16 @@
+
+import base64
 import io
+from io import BytesIO
 import logging
+from urllib.parse import urlparse
+
+from PIL import Image
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from core.config import settings
-from minio import Minio
+from minio import Minio, S3Error
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -59,3 +65,32 @@ def upload_image_to_minio(file_bytes: bytes, file_name: str, bucket_name: str) -
         logger.error(f"Error uploading image: {file_name} to MinIO. Error: {str(e)}")
         raise
 
+
+def get_image_from_minio(image_url: str) -> str:
+    try:
+        parsed = urlparse(image_url)
+        path_parts = parsed.path.strip("/").split("/")
+
+        if len(path_parts) < 2:
+            logger.error(f"Invalid MinIO URL format: {image_url}")
+            return None
+
+        bucket_name = path_parts[0]
+        object_name = "/".join(path_parts[1:])
+
+        response = minio_client.get_object(bucket_name, object_name)
+        image_data = response.data
+
+        image = Image.open(BytesIO(image_data))
+        buffered = BytesIO()
+        image.save(buffered, format=image.format)
+        encoded_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+        return f"data:image/{image.format.lower()};base64,{encoded_str}"
+
+    except S3Error as e:
+        logger.error(f"MinIO error: {str(e)}")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to process image: {str(e)}")
+        return None
