@@ -1,4 +1,3 @@
-# model/user.py
 from datetime import datetime, date
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
@@ -11,16 +10,22 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     username = Column(String, index=True)
-    age = Column(Integer, nullable=False)
-    password = Column(String, nullable=False)
-    gender = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
+    age = Column(Integer, nullable=True)
+    password = Column(String, nullable=True)
+    gender = Column(String, nullable=True)
+    is_active = Column(Boolean, default=False)
     is_sub = Column(Boolean, default=False)
     free_attempts = Column(Integer)
     sub_until = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    dateOfBirth = Column(Date, nullable=False)
+    dateOfBirth = Column(Date, nullable=True)
     profile_image_url = Column(String, nullable=True)
+
+    is_oauth_user = Column(Boolean, default=False)
+    oauth_provider = Column(String, nullable=True)
+    oauth_id = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
     gym_logs = relationship("UserGymLog", back_populates="user", cascade="all, delete-orphan")
     chat_histories = relationship("ChatHistory", back_populates="user")
