@@ -4,6 +4,7 @@ import time
 
 from starlette.responses import StreamingResponse
 
+from core.config import settings
 from core.database import get_db, upload_image_to_minio
 from model.muscle import Muscle
 import requests
@@ -83,7 +84,7 @@ def upload_muscle_image(
 
     filename = f"{name}_{int(time.time())}.jpg"
 
-    image_url = upload_image_to_minio(file_bytes, filename)
+    image_url = upload_image_to_minio(file_bytes, filename, settings.MUSCLE_BUCKET)
 
     muscle = db.query(Muscle).filter(Muscle.name == name).first()
     if not muscle:
